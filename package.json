@@ -1,0 +1,25 @@
+{
+  "name": "guitang-reader-v3",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .js,.vue"
+  },
+  "dependencies": {
+    "@vitejs/plugin-vue": "latest",
+    "vite": "latest",
+    "vue": "latest",
+    "vue-router": "latest",
+    "pinia": "latest",
+    "dexie": "latest",
+    "mammoth": "latest"
+  },
+  "devDependencies": {
+    "eslint": "latest",
+    "eslint-plugin-vue": "latest"
+  }
+}
