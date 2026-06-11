@@ -59,7 +59,7 @@ function msg(s){ var m = document.getElementById('sb-msg'); if(m) m.textContent 
 
 function dbOpen(){
   return new Promise(function(ok,no){
-    var r = indexedDB.open(DB_NAME, 3)
+    var r = indexedDB.open(DB_NAME)
     r.onupgradeneeded = function(){}; r.onsuccess = function(){ ok(r.result) }; r.onerror = function(){ no(r.error) }
   })
 }
