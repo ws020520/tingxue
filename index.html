@@ -22,6 +22,14 @@
 if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(() => {}) }
 </script>
 
+<style>
+  @media (max-width: 900px) {
+    #sync-widget { bottom: 70px !important; left: 8px !important; padding: 6px 10px !important; gap: 4px !important; font-size: 11px !important; }
+    #sb-token { width: 80px !important; height: 26px !important; font-size: 11px !important; }
+    #sb-push, #sb-pull { height: 26px !important; padding: 0 8px !important; font-size: 11px !important; }
+    #sb-msg { font-size: 10px !important; max-width: 60px; overflow: hidden; text-overflow: ellipsis; }
+  }
+</style>
 <div id="sync-widget" style="
   position:fixed;bottom:16px;left:16px;z-index:9998;
   background:rgba(255,255,255,.92);backdrop-filter:blur(12px);
