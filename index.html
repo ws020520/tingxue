@@ -71,15 +71,23 @@ function exportAll(db){
     var done = 0; var total = 13
     function check(){ done++; if(done >= total) ok(result) }
     tx.objectStore('books').getAll().onsuccess = function(e){ var books = e.target.result
+      if(!books.length){ result.books = []; check(); return }
       var remaining = books.length
-      if(!remaining){ result.books = []; check(); return }
       books.forEach(function(book){
+        // 每本书单独事务获取章节/记忆/风格（保证数据完整性）
+        // 使用 oncomplete 而非 setTimeout，确保数据就绪后立刻推进
         var bt = db.transaction(['chapters','aiMemories','styleSamples'], 'readonly')
+        // 复制时剔除巨大的封面 base64 数据（封面在云端同步中不传输）
         var entry = Object.assign({}, book)
-        bt.objectStore('chapters').index('bookId').getAll(book.id).onsuccess = function(ev){ entry.chapters = ev.target.result.sort(function(a,b){ return a.index - b.index }) }
-        bt.objectStore('aiMemories').get(book.id).onsuccess = function(ev){ if(ev.target.result){ var m = ev.target.result; entry.outline = m.outline||''; entry.roles = m.roles||''; entry.world = m.world||''; entry.timeline = m.timeline||''; entry.rules = m.rules||''; entry.forbidden = m.forbidden||'' } }
-        bt.objectStore('styleSamples').index('bookId').getAll(book.id).onsuccess = function(ev){ entry.referenceTexts = ev.target.result }
-        setTimeout(function(){ result.books.push(entry); remaining--; if(remaining <= 0) check() }, 50)
+        delete entry.cover
+        var queriesDone = 0
+        function onQueryDone(){
+          queriesDone++
+          if(queriesDone >= 3){ result.books.push(entry); remaining--; if(remaining <= 0) check() }
+        }
+        bt.objectStore('chapters').index('bookId').getAll(book.id).onsuccess = function(ev){ entry.chapters = ev.target.result.sort(function(a,b){ return a.index - b.index }); onQueryDone() }
+        bt.objectStore('aiMemories').get(book.id).onsuccess = function(ev){ if(ev.target.result){ var m = ev.target.result; entry.outline = m.outline||''; entry.roles = m.roles||''; entry.world = m.world||''; entry.timeline = m.timeline||''; entry.rules = m.rules||''; entry.forbidden = m.forbidden||'' }; onQueryDone() }
+        bt.objectStore('styleSamples').index('bookId').getAll(book.id).onsuccess = function(ev){ entry.referenceTexts = ev.target.result; onQueryDone() }
       })
     }
     tx.objectStore('settings').getAll().onsuccess = function(e){ e.target.result.forEach(function(s){ result.settings[s.key] = s.value }); check() }
@@ -102,13 +110,14 @@ function jsonToBase64(str){
 }
 
 window._push = async function(){
-  msg('推送中...')
+  msg('正在导出数据...')
   try {
     var token = document.getElementById('sb-token').value.trim()
     if(!token){ msg('请填写 Token'); return }
     var db = await dbOpen()
     var data = await exportAll(db)
     db.close()
+    msg('正在上传 (' + data.books.length + ' 本)...')
     var jsonStr = JSON.stringify(data)
     var content = jsonToBase64(jsonStr)
     // 获取 sha
