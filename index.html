@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="归棠" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#15803d" />
+<link rel="manifest" href="./manifest.json" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon.png" />
+<title>归棠</title>
+  <script type="module" crossorigin src="./assets/index-BTWUdv2i.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-D4a7vZfC.css">
+</head>
+<body>
+<div id="app"></div>
+<script>
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(() => {}) }
+</script>
+
+<div id="sync-widget" style="
+  position:fixed;bottom:16px;left:16px;z-index:9998;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(12px);
+  border-radius:12px;padding:10px 14px;
+  box-shadow:0 4px 24px rgba(0,0,0,.1);
+  display:flex;align-items:center;gap:8px;
+  font-size:13px;max-width:calc(100vw - 32px);
+">
+  <span style="font-weight:700;white-space:nowrap;color:#4a8a4a">☁️ 同步</span>
+  <input id="sb-token" type="password" placeholder="Token" style="
+    width:120px;height:30px;border:1px solid #d4d4d4;border-radius:6px;
+    padding:0 8px;font-size:12px;
+  " />
+  <button id="sb-push" style="
+    height:30px;padding:0 10px;border-radius:6px;
+    background:#16a34a;color:#fff;border:none;font-weight:600;
+    cursor:pointer;font-size:12px;white-space:nowrap;
+  ">推送</button>
+  <button id="sb-pull" style="
+    height:30px;padding:0 10px;border-radius:6px;
+    background:#fff;border:1px solid #d4d4d4;color:#4b5563;
+    font-weight:600;cursor:pointer;font-size:12px;white-space:nowrap;
+  ">拉取</button>
+  <span id="sb-msg" style="font-size:11px;color:#6b7280;white-space:nowrap">就绪</span>
+</div>
+
+<script>
+(function(){
+var DB_NAME = 'guitang_reader_v3_refresh'
+var REPO = { owner: 'ws020520', repo: 'tingxue', branch: 'main', file: 'guitang-backup.json' }
+var API = 'https://api.github.com/repos/' + REPO.owner + '/' + REPO.repo + '/contents/' + REPO.file
+var RAW = 'https://raw.githubusercontent.com/' + REPO.owner + '/' + REPO.repo + '/' + REPO.branch + '/' + REPO.file
+
+function msg(s){ var m = document.getElementById('sb-msg'); if(m) m.textContent = s }
+
+function dbOpen(){
+  return new Promise(function(ok,no){
+    var r = indexedDB.open(DB_NAME, 3)
+    r.onupgradeneeded = function(){}; r.onsuccess = function(){ ok(r.result) }; r.onerror = function(){ no(r.error) }
+  })
+}
+
+function exportAll(db){
+  return new Promise(function(ok,no){
+    var tx = db.transaction(['books','chapters','settings','aiSettings','aiMemories','styleSamples','notes','bookmarks','aiDrafts','aiHistory','characterCards','plotThreads','chapterTrash'], 'readonly')
+    var result = { version:3, exportedAt: new Date().toISOString(), books:[], settings:{}, aiSettings:{}, notes:[], bookmarks:[], aiDrafts:[], aiHistory:[], characterCards:[], styleSamples:[], plotThreads:[], chapterTrash:[] }
+    var done = 0; var total = 13
+    function check(){ done++; if(done >= total) ok(result) }
+    tx.objectStore('books').getAll().onsuccess = function(e){ var books = e.target.result
+      var remaining = books.length
+      if(!remaining){ result.books = []; check(); return }
+      books.forEach(function(book){
+        var bt = db.transaction(['chapters','aiMemories','styleSamples'], 'readonly')
+        var entry = Object.assign({}, book)
+        bt.objectStore('chapters').index('bookId').getAll(book.id).onsuccess = function(ev){ entry.chapters = ev.target.result.sort(function(a,b){ return a.index - b.index }) }
+        bt.objectStore('aiMemories').get(book.id).onsuccess = function(ev){ if(ev.target.result){ var m = ev.target.result; entry.outline = m.outline||''; entry.roles = m.roles||''; entry.world = m.world||''; entry.timeline = m.timeline||''; entry.rules = m.rules||''; entry.forbidden = m.forbidden||'' } }
+        bt.objectStore('styleSamples').index('bookId').getAll(book.id).onsuccess = function(ev){ entry.referenceTexts = ev.target.result }
+        setTimeout(function(){ result.books.push(entry); remaining--; if(remaining <= 0) check() }, 50)
+      })
+    }
+    tx.objectStore('settings').getAll().onsuccess = function(e){ e.target.result.forEach(function(s){ result.settings[s.key] = s.value }); check() }
+    tx.objectStore('aiSettings').getAll().onsuccess = function(e){ e.target.result.forEach(function(a){ var o = Object.assign({}, a); delete o.key; result.aiSettings[a.key] = o }); check() }
+    tx.objectStore('notes').getAll().onsuccess = function(e){ result.notes = e.target.result; check() }
+    tx.objectStore('bookmarks').getAll().onsuccess = function(e){ result.bookmarks = e.target.result; check() }
+    tx.objectStore('aiDrafts').getAll().onsuccess = function(e){ result.aiDrafts = e.target.result; check() }
+    tx.objectStore('aiHistory').getAll().onsuccess = function(e){ result.aiHistory = e.target.result; check() }
+    tx.objectStore('characterCards').getAll().onsuccess = function(e){ result.characterCards = e.target.result; check() }
+    tx.objectStore('styleSamples').getAll().onsuccess = function(e){ result.styleSamples = e.target.result; check() }
+    tx.objectStore('plotThreads').getAll().onsuccess = function(e){ result.plotThreads = e.target.result; check() }
+    tx.objectStore('chapterTrash').getAll().onsuccess = function(e){ result.chapterTrash = e.target.result; check() }
+  })
+}
+
+function jsonToBase64(str){
+  var bytes = new TextEncoder().encode(str)
+  var arr = Array.from(bytes)
+  return btoa(arr.map(function(b){ return String.fromCharCode(b) }).join(''))
+}
+
+window._push = async function(){
+  msg('推送中...')
+  try {
+    var token = document.getElementById('sb-token').value.trim()
+    if(!token){ msg('请填写 Token'); return }
+    var db = await dbOpen()
+    var data = await exportAll(db)
+    db.close()
+    var jsonStr = JSON.stringify(data)
+    var content = jsonToBase64(jsonStr)
+    // 获取 sha
+    var sha = ''
+    try {
+      var r1 = await fetch(API + '?ref=' + REPO.branch, { headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' } })
+      if(r1.ok){ var row = await r1.json(); sha = row.sha||'' }
+      else if(r1.status === 404){}
+      else if(r1.status === 401){ msg('Token 无效'); return }
+      else if(r1.status === 403){ msg('权限不足'); return }
+    } catch(e){}
+    var body = { message: '同步归棠数据', content: content, branch: REPO.branch }
+    if(sha) body.sha = sha
+    var r2 = await fetch(API, { method: 'PUT', headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    if(!r2.ok){
+      if(r2.status === 422){ msg('冲突，请先拉取') }
+      else if(r2.status === 404){ msg('仓库路径不存在') }
+      else{ msg('推送失败: ' + r2.status) }
+      return
+    }
+    msg('已推送 ' + data.books.length + ' 本')
+  } catch(e){ msg('错误: ' + e.message) }
+}
+
+window._pull = async function(){
+  msg('拉取中...')
+  try {
+    var r = await fetch(RAW, { cache: 'no-store' })
+    if(!r.ok){ msg('拉取失败: ' + r.status); return }
+    var json = await r.json()
+    var books = Array.isArray(json.books) ? json.books : []
+    if(!books.length && !json.settings){ msg('备份无数据'); return }
+    var db = await dbOpen()
+    // 清空所有表
+    var tables = ['books','chapters','readingProgress','settings','aiSettings','aiHistory','aiDrafts','aiMemories','characterCards','styleSamples','plotThreads','notes','bookmarks','syncLogs','chapterTrash']
+    for(var i = 0; i < tables.length; i++){
+      await new Promise(function(ok){ var tx = db.transaction(tables[i], 'readwrite'); tx.objectStore(tables[i]).clear(); tx.oncomplete = ok })
+    }
+    // 导入 books
+    var bookCount = 0
+    for(var j = 0; j < books.length; j++){
+      var book = books[j]
+      var bid = book.id
+      var chapters = (book.chapters||[]).map(function(ch, idx){
+        return { id: ch.id, bookId: bid, index: idx, title: ch.title||('第'+(idx+1)+'章'), volume: ch.volume||'正文', content: ch.content||'', wordCount: (ch.content||'').replace(/\s/g,'').length, createdAt: ch.createdAt||new Date().toISOString(), updatedAt: ch.updatedAt||new Date().toISOString() }
+      })
+      var wc = chapters.reduce(function(s,c){ return s + c.wordCount }, 0)
+      var summary = {
+        id: bid, title: book.title||'未命名', author: book.author||'佚名', category: book.category||'其他',
+        status: book.status||'连载中', tags: book.tags||[], summary: book.summary||'', source: book.source||'本地导入',
+        cover: book.cover||'', chapterCount: chapters.length, wordCount: wc,
+        lastReadChapterId: chapters[0]?chapters[0].id:'', lastReadPageIndex: 0,
+        createdAt: book.createdAt||new Date().toISOString(), updatedAt: book.updatedAt||new Date().toISOString(), lastOpen: book.lastOpen||''
+      }
+      await new Promise(function(ok){ var tx = db.transaction(['books','chapters','readingProgress','aiMemories'], 'readwrite')
+        tx.objectStore('books').put(summary)
+        chapters.forEach(function(c){ tx.objectStore('chapters').put(c) })
+        tx.objectStore('readingProgress').put({ bookId: bid, chapterId: summary.lastReadChapterId, pageIndex: 0, updatedAt: new Date().toISOString() })
+        tx.objectStore('aiMemories').put({ bookId: bid, outline: book.outline||'', roles: book.roles||'', world: book.world||'', timeline: book.timeline||'', rules: book.rules||'', forbidden: book.forbidden||'', updatedAt: new Date().toISOString() })
+        tx.oncomplete = ok
+      })
+      bookCount++
+    }
+    // 导入 settings/aiSettings
+    if(json.settings){
+      await new Promise(function(ok){ var tx = db.transaction('settings', 'readwrite'); var s = tx.objectStore('settings')
+        Object.keys(json.settings).forEach(function(k){ s.put({ key: k, value: json.settings[k] }) }); tx.oncomplete = ok })
+    }
+    if(json.aiSettings){
+      await new Promise(function(ok){ var tx = db.transaction('aiSettings', 'readwrite'); var s = tx.objectStore('aiSettings')
+        Object.keys(json.aiSettings).forEach(function(k){ var v = Object.assign({}, json.aiSettings[k]); v.key = k; s.put(v) }); tx.oncomplete = ok })
+    }
+    // 导入其他表
+    var extras = { notes: 'notes', bookmarks: 'bookmarks', aiDrafts: 'aiDrafts', aiHistory: 'aiHistory', characterCards: 'characterCards', styleSamples: 'styleSamples', plotThreads: 'plotThreads', chapterTrash: 'chapterTrash' }
+    for(var ek in extras){
+      if(Array.isArray(json[ek])){
+        var storeName = extras[ek]
+        await new Promise(function(ok){ var tx = db.transaction(storeName, 'readwrite'); var s = tx.objectStore(storeName)
+          json[ek].forEach(function(item){ s.put(item) }); tx.oncomplete = ok })
+      }
+    }
+    db.close()
+    msg('已导入 ' + bookCount + ' 本')
+    setTimeout(function(){ location.reload() }, 1000)
+  } catch(e){ msg('错误: ' + e.message) }
+}
+
+// 从 IndexedDB 读取保存的 token
+dbOpen().then(function(db){
+  var tx = db.transaction('settings', 'readonly')
+  tx.objectStore('settings').get('sync').onsuccess = function(e){
+    if(e.target.result && e.target.result.value && e.target.result.value.token){
+      document.getElementById('sb-token').value = e.target.result.value.token
+    }
+    db.close()
+  }
+}).catch(function(){})
+
+// 按钮事件
+document.addEventListener('DOMContentLoaded', function(){
+  var pb = document.getElementById('sb-push')
+  var pl = document.getElementById('sb-pull')
+  if(pb) pb.onclick = window._push
+  if(pl) pl.onclick = window._pull
+})
+})()
+</script>
+
+</body>
+</html>

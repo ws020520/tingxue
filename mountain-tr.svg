@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180">
+  <!-- distant mountains -->
+  <path d="M180 90l30-45 25 45z" fill="#88b898" opacity="0.12"/>
+  <path d="M210 80l40-55 35 55z" fill="#78a888" opacity="0.10"/>
+  <path d="M240 75l25-35 20 35z" fill="#88b898" opacity="0.08"/>
+  <path d="M190 95l50-60 45 60z" fill="#7a9a85" opacity="0.06"/>
+  <!-- clouds -->
+  <ellipse cx="230" cy="50" rx="45" ry="16" fill="#e8f2e8" opacity="0.25"/>
+  <ellipse cx="270" cy="40" rx="35" ry="12" fill="#f0f5f0" opacity="0.2"/>
+  <ellipse cx="250" cy="60" rx="50" ry="14" fill="#e8f2e8" opacity="0.18"/>
+  <ellipse cx="210" cy="45" rx="30" ry="10" fill="#f0f7f2" opacity="0.15"/>
+  <!-- birds -->
+  <path d="M220 35l5-3-5-2" stroke="#78a888" stroke-width="1" fill="none" opacity="0.3"/>
+  <path d="M235 28l5-3-5-2" stroke="#78a888" stroke-width="1" fill="none" opacity="0.25"/>
+  <path d="M260 32l4-2.5-4-2" stroke="#78a888" stroke-width="1" fill="none" opacity="0.2"/>
+  <!-- mist -->
+  <ellipse cx="280" cy="70" rx="60" ry="8" fill="#e0ece0" opacity="0.15"/>
+</svg>

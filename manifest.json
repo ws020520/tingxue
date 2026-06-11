@@ -1,0 +1,14 @@
+{
+  "name": "归棠 - 小说创作阅读器",
+  "short_name": "归棠",
+  "description": "浅绿色私人书房 · 本地阅读与创作 · AI 长篇写作工作台",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f0fdf4",
+  "theme_color": "#15803d",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

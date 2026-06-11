@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200">
+  <!-- distant mountains -->
+  <path d="M0 80c20-12 45-20 70-16 18 3 30 12 40 22 12-8 28-14 45-12 14 2 24 8 32 16 18-10 38-15 60-10 12 3 20 8 28 14" stroke="#88b898" stroke-width="1.2" fill="none" opacity="0.2"/>
+  <!-- water shore -->
+  <path d="M0 110c25-5 50-10 80-5 20 4 35 12 50 22" stroke="#88b898" stroke-width="1" fill="none" opacity="0.18"/>
+  <path d="M0 130c30-8 60-12 95-6 22 4 38 14 55 25" stroke="#7a9a85" stroke-width="0.8" fill="none" opacity="0.14"/>
+  <!-- pavilion -->
+  <rect x="110" y="95" width="28" height="22" rx="1" fill="#88b898" opacity="0.12"/>
+  <polygon points="108,95 124,78 140,95" fill="#7a9a85" opacity="0.15"/>
+  <rect x="115" y="98" width="8" height="14" fill="#88b898" opacity="0.1"/>
+  <rect x="128" y="98" width="8" height="14" fill="#88b898" opacity="0.1"/>
+  <!-- columns -->
+  <line x1="112" y1="95" x2="112" y2="117" stroke="#7a9a85" stroke-width="1.5" opacity="0.15"/>
+  <line x1="136" y1="95" x2="136" y2="117" stroke="#7a9a85" stroke-width="1.5" opacity="0.15"/>
+  <!-- boat -->
+  <path d="M140 118c-3 3-8 2-12 0-3-2-5-4-3-6" stroke="#88b898" stroke-width="1" fill="none" opacity="0.15"/>
+  <line x1="134" y1="117" x2="130" y2="112" stroke="#88b898" stroke-width="0.8" opacity="0.12"/>
+  <!-- water ripples -->
+  <ellipse cx="145" cy="125" rx="25" ry="3" fill="none" stroke="#88b898" stroke-width="0.6" opacity="0.1"/>
+  <ellipse cx="145" cy="130" rx="20" ry="2.5" fill="none" stroke="#88b898" stroke-width="0.5" opacity="0.08"/>
+  <!-- trees near shore -->
+  <circle cx="100" cy="100" r="6" fill="#8ab898" opacity="0.08"/>
+  <circle cx="95" cy="102" r="5" fill="#8ab898" opacity="0.06"/>
+  <circle cx="105" cy="98" r="4" fill="#8ab898" opacity="0.07"/>
+  <!-- path stones -->
+  <ellipse cx="115" cy="117" rx="4" ry="2" fill="#88b898" opacity="0.08"/>
+  <ellipse cx="105" cy="118" rx="3" ry="1.5" fill="#88b898" opacity="0.06"/>
+  <ellipse cx="120" cy="116" rx="3.5" ry="1.5" fill="#88b898" opacity="0.07"/>
+</svg>

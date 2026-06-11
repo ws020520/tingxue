@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 180">
+  <!-- main branch -->
+  <path d="M170 5c-5 12-15 20-28 22-10 2-18-2-22-8" stroke="#5a8a6a" stroke-width="2" fill="none"/>
+  <path d="M155 15c-8 8-16 10-26 8" stroke="#6a9a7a" stroke-width="1.5" fill="none"/>
+  <path d="M140 20c3-6 8-10 15-10" stroke="#5a8a6a" stroke-width="1.2" fill="none"/>
+  <!-- plum blossom 1: 5 petals -->
+  <circle cx="168" cy="12" r="5" fill="#f0d0d5" opacity="0.7"/>
+  <circle cx="163" cy="10" r="4" fill="#f5dde0" opacity="0.6"/>
+  <circle cx="166" cy="15" r="4" fill="#f0d0d5" opacity="0.65"/>
+  <circle cx="171" cy="14" r="4" fill="#f5dde0" opacity="0.6"/>
+  <circle cx="169" cy="9" r="3.5" fill="#f8e5e8" opacity="0.7"/>
+  <circle cx="168" cy="12" r="1.5" fill="#e8a0a8" opacity="0.8"/>
+  <!-- plum blossom 2 -->
+  <circle cx="145" cy="18" r="4" fill="#f0d0d5" opacity="0.6"/>
+  <circle cx="141" cy="17" r="3.5" fill="#f5dde0" opacity="0.55"/>
+  <circle cx="143" cy="21" r="3.5" fill="#f0d0d5" opacity="0.55"/>
+  <circle cx="147" cy="20" r="3.5" fill="#f5dde0" opacity="0.5"/>
+  <circle cx="145" cy="15" r="3" fill="#f8e5e8" opacity="0.6"/>
+  <circle cx="144" cy="18" r="1.2" fill="#e8a0a8" opacity="0.7"/>
+  <!-- bud -->
+  <circle cx="132" cy="12" r="2.5" fill="#f0c0c8" opacity="0.5"/>
+  <circle cx="128" cy="10" r="2" fill="#f5d0d8" opacity="0.4"/>
+  <!-- small buds -->
+  <circle cx="160" cy="6" r="2" fill="#f0c0c8" opacity="0.45"/>
+  <circle cx="150" cy="8" r="1.5" fill="#f5d0d8" opacity="0.35"/>
+</svg>
