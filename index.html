@@ -22,6 +22,9 @@
 if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(() => {}) }
 </script>
 
+
+
+
 <div id="sync-widget" style="
   position:fixed;bottom:16px;left:16px;z-index:9998;
   background:rgba(255,255,255,.92);backdrop-filter:blur(12px);
@@ -66,40 +69,45 @@ function dbOpen(){
 
 function exportAll(db){
   return new Promise(function(ok,no){
-    var tx = db.transaction(['books','chapters','settings','aiSettings','aiMemories','styleSamples','notes','bookmarks','aiDrafts','aiHistory','characterCards','plotThreads','chapterTrash'], 'readonly')
     var result = { version:3, exportedAt: new Date().toISOString(), books:[], settings:{}, aiSettings:{}, notes:[], bookmarks:[], aiDrafts:[], aiHistory:[], characterCards:[], styleSamples:[], plotThreads:[], chapterTrash:[] }
-    var done = 0; var total = 13
-    function check(){ done++; if(done >= total) ok(result) }
-    tx.objectStore('books').getAll().onsuccess = function(e){ var books = e.target.result
-      if(!books.length){ result.books = []; check(); return }
-      var remaining = books.length
-      books.forEach(function(book){
-        // 每本书单独事务获取章节/记忆/风格（保证数据完整性）
-        // 使用 oncomplete 而非 setTimeout，确保数据就绪后立刻推进
-        var bt = db.transaction(['chapters','aiMemories','styleSamples'], 'readonly')
-        // 复制时剔除巨大的封面 base64 数据（封面在云端同步中不传输）
+    var bt = db.transaction(['books'], 'readonly')
+    bt.onerror = function(){ no(new Error('无法读取书籍列表')) }
+    bt.objectStore('books').getAll().onsuccess = function(e){ var books = e.target.result
+      if(!books.length){ readRest(); return }
+      function processBook(i){
+        if(i >= books.length){ readRest(); return }
+        var book = books[i]
+        var innerTx = db.transaction(['chapters','aiMemories','styleSamples'], 'readonly')
         var entry = Object.assign({}, book)
         delete entry.cover
         var queriesDone = 0
-        function onQueryDone(){
+        innerTx.onerror = function(){ entry._error = '读取失败'; result.books.push(entry); processBook(i+1) }
+        function onDone(){
           queriesDone++
-          if(queriesDone >= 3){ result.books.push(entry); remaining--; if(remaining <= 0) check() }
+          if(queriesDone >= 3){ result.books.push(entry); processBook(i+1) }
         }
-        bt.objectStore('chapters').index('bookId').getAll(book.id).onsuccess = function(ev){ entry.chapters = ev.target.result.sort(function(a,b){ return a.index - b.index }); onQueryDone() }
-        bt.objectStore('aiMemories').get(book.id).onsuccess = function(ev){ if(ev.target.result){ var m = ev.target.result; entry.outline = m.outline||''; entry.roles = m.roles||''; entry.world = m.world||''; entry.timeline = m.timeline||''; entry.rules = m.rules||''; entry.forbidden = m.forbidden||'' }; onQueryDone() }
-        bt.objectStore('styleSamples').index('bookId').getAll(book.id).onsuccess = function(ev){ entry.referenceTexts = ev.target.result; onQueryDone() }
-      })
+        innerTx.objectStore('chapters').index('bookId').getAll(book.id).onsuccess = function(ev){ entry.chapters = (ev.target.result||[]).sort(function(a,b){ return (a.index||0) - (b.index||0) }); onDone() }
+        innerTx.objectStore('aiMemories').get(book.id).onsuccess = function(ev){ if(ev.target.result){ var m = ev.target.result; entry.outline = m.outline||''; entry.roles = m.roles||''; entry.world = m.world||''; entry.timeline = m.timeline||''; entry.rules = m.rules||''; entry.forbidden = m.forbidden||'' }; onDone() }
+        innerTx.objectStore('styleSamples').index('bookId').getAll(book.id).onsuccess = function(ev){ entry.referenceTexts = ev.target.result||[]; onDone() }
+      }
+      processBook(0)
     }
-    tx.objectStore('settings').getAll().onsuccess = function(e){ e.target.result.forEach(function(s){ result.settings[s.key] = s.value }); check() }
-    tx.objectStore('aiSettings').getAll().onsuccess = function(e){ e.target.result.forEach(function(a){ var o = Object.assign({}, a); delete o.key; result.aiSettings[a.key] = o }); check() }
-    tx.objectStore('notes').getAll().onsuccess = function(e){ result.notes = e.target.result; check() }
-    tx.objectStore('bookmarks').getAll().onsuccess = function(e){ result.bookmarks = e.target.result; check() }
-    tx.objectStore('aiDrafts').getAll().onsuccess = function(e){ result.aiDrafts = e.target.result; check() }
-    tx.objectStore('aiHistory').getAll().onsuccess = function(e){ result.aiHistory = e.target.result; check() }
-    tx.objectStore('characterCards').getAll().onsuccess = function(e){ result.characterCards = e.target.result; check() }
-    tx.objectStore('styleSamples').getAll().onsuccess = function(e){ result.styleSamples = e.target.result; check() }
-    tx.objectStore('plotThreads').getAll().onsuccess = function(e){ result.plotThreads = e.target.result; check() }
-    tx.objectStore('chapterTrash').getAll().onsuccess = function(e){ result.chapterTrash = e.target.result; check() }
+    function readRest(){
+      var restTx = db.transaction(['settings','aiSettings','notes','bookmarks','aiDrafts','aiHistory','characterCards','styleSamples','plotThreads','chapterTrash'], 'readonly')
+      restTx.onerror = function(){ no(new Error('无法读取全局数据')) }
+      var done2 = 0; var total2 = 10
+      function chk(){ done2++; if(done2 >= total2) ok(result) }
+      restTx.objectStore('settings').getAll().onsuccess = function(e){ (e.target.result||[]).forEach(function(s){ result.settings[s.key] = s.value }); chk() }
+      restTx.objectStore('aiSettings').getAll().onsuccess = function(e){ (e.target.result||[]).forEach(function(a){ var o = Object.assign({}, a); delete o.key; result.aiSettings[a.key] = o }); chk() }
+      restTx.objectStore('notes').getAll().onsuccess = function(e){ result.notes = e.target.result||[]; chk() }
+      restTx.objectStore('bookmarks').getAll().onsuccess = function(e){ result.bookmarks = e.target.result||[]; chk() }
+      restTx.objectStore('aiDrafts').getAll().onsuccess = function(e){ result.aiDrafts = e.target.result||[]; chk() }
+      restTx.objectStore('aiHistory').getAll().onsuccess = function(e){ result.aiHistory = e.target.result||[]; chk() }
+      restTx.objectStore('characterCards').getAll().onsuccess = function(e){ result.characterCards = e.target.result||[]; chk() }
+      restTx.objectStore('styleSamples').getAll().onsuccess = function(e){ result.styleSamples = e.target.result||[]; chk() }
+      restTx.objectStore('plotThreads').getAll().onsuccess = function(e){ result.plotThreads = e.target.result||[]; chk() }
+      restTx.objectStore('chapterTrash').getAll().onsuccess = function(e){ result.chapterTrash = e.target.result||[]; chk() }
+    }
   })
 }
 
